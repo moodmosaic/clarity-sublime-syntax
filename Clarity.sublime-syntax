@@ -1,0 +1,135 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/syntax.html
+name: Clarity
+file_extensions:
+  - clar
+scope: source.clar
+contexts:
+  main:
+    - include: comment
+    - include: datatype
+    - include: keyword
+    - include: number
+    - include: string
+    - include: define
+    - include: lang-func
+    - include: tuple-key
+  comment:
+    - match: '(?x) (?<=^|[()\[\]{}",''`;\s]) (;) .* $'
+      scope: comment.line.semicolon.clarity
+  args:
+    - match: |-
+        (?x)
+        (?<=^|[(]) \s*
+        ([a-z][a-zA-Z0-9_-]+) \s*
+      captures:
+        0: variable.parameter.clarity
+      push:
+        - match: \)
+          captures:
+            0: punctuation.section.end.clarity
+          pop: true
+        - include: datatype
+        - include: tuple-key
+        - include: number
+  datatype:
+    - match: '(?x) (?<=^|[\s:(){},]) (tuple|list|response|optional|buff|string-ascii|string-utf8|principal|bool|int|uint) (?=[\s(){},])'
+      scope: storage.type.clarity
+  define:
+    - include: define-func
+    - include: define-var
+    - include: set-func
+  define-func:
+    - match: |-
+        (?x)
+        (?<=^|[(]) \s*
+        (define-(?:public|private|read-only)) \s+
+        (\() \s*
+        ([a-z][a-zA-Z0-9_-]+) \s*
+      captures:
+        1: storage.type.clarity
+        2: punctuation.section.begin.clarity
+        3: entity.name.function.clarity
+      push:
+        - match: \)
+          captures:
+            0: punctuation.section.end.clarity
+          pop: true
+        - include: args
+  define-var:
+    - match: |-
+        (?x)
+        (?<=^[(]) \s*
+        (define-(?:constant|data-var|map|fungible-token|non-fungible-token|trait)) \s+
+        ([a-zA-Z][a-zA-Z0-9_-]+)
+      captures:
+        1: storage.type.clarity
+        2: variable.other.clarity
+  escape-char:
+    - match: \\.
+      scope: constant.character.escape.clarity
+  keyword:
+    - match: |-
+        (?x)
+        (?<=^|[\s:(){},])
+        (?:block-height|burn-block-height|contract-caller|false|is-in-regtest|none|stx-liquid-supply|true|tx-sender)
+        (?=[\s(){},])
+      scope: constant.language.clarity
+  lang-func:
+    - match: |-
+        (?x)
+        (?<=^|[(]) \s*
+        (
+          and|append|as-contract|as-max-len\?|asserts!|at-block|begin|concat|contract-call\?|contract-of|
+          default-to|element-at|err|filter|fold|ft-burn\?|ft-get-balance|ft-get-supply|ft-mint\?|ft-transfer\?|
+          get|get-block-info\?|hash160|if|impl-trait|index-of|is-eq|is-err|is-none|is-ok|is-some|keccak256|
+          len|let|list|log2|map|map-delete|map-get\?|map-insert|map-set|match|merge|mod|nft-burn\?|nft-get-owner\?|
+          nft-mint\?|nft-transfer\?|not|ok|or|pow|principal-of\?|print|secp256k1-recover\?|secp256k1-verify|sha256|
+          sha512|sha512/256|some|sqrti|stx-burn\?|stx-get-balance|stx-transfer\?|to-int|to-uint|try!|unwrap-err-panic|
+          unwrap-err!|unwrap-panic|unwrap!|var-get|var-set|xor
+        ) \s+
+      scope: keyword.control.clarity
+  number:
+    - match: |-
+        (?x)
+        (?<=^|[\s:(){},])
+        # principal address + trait + contract address
+        \'[0-9A-Z]{28,41}(:?\.[a-zA-Z][a-zA-Z0-9\-]+){0,2}|
+        # hex values
+        0x[0-9a-f]{2,}|
+        # unsigned integers
+        u[0-9]+|
+        # integers
+        [0-9]+
+        (?=[\s(){},]|$)
+      scope: constant.numeric.clarity
+  set-func:
+    - match: |-
+        (?x)
+        (?<=^|[(]) \s*
+        (var-get|var-set|map-get\?|map-set|map-insert|get) \s+
+        ([a-z][a-zA-Z0-9_-]+) \s*
+      captures:
+        1: keyword.control.clarity
+        2: variable.other.clarity
+      push:
+        - match: \)
+          captures:
+            0: punctuation.section.end.clarity
+          pop: true
+        - include: lang-func
+        - include: tuple-key
+        - include: number
+  string:
+    - match: '"'
+      push:
+        - meta_scope: string.quoted.double.clarity
+        - match: '"'
+          pop: true
+        - include: escape-char
+  tuple-key:
+    - match: |-
+        (?x)
+        ([a-z][a-zA-Z0-9_-]+)(?=:)
+      scope: entity.name.type.clarity
